@@ -3,13 +3,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <!-- <link rel="stylesheet" href="style.css"> -->
+    <link rel="stylesheet" href="style.css">
     <!-- Load d3.js -->
     <script src="https://d3js.org/d3.v6.js"></script>
 </head>
 <body>
+    <h1>Migrations résidentielles en France</h1>
+    <p>Survolez un département pour afficher les flux de personnes ayant déménagé en 2019</p>
     <!-- <div id="mapid">i</div> -->
     <svg id="my_dataviz" width="1000" height="800"></svg>
+    <svg id="barplot" width="700" height="800">aaa</svg>
 </body>
 <script>
     // The svg
@@ -21,23 +24,100 @@
     const projection = d3.geoMercator()
         .center([2, 47])                // GPS of location to zoom on
         .scale(2880)                       // This is like the zoom
-        .translate([ width/2, height/2 ])
+        .translate([ width/2, height/2 ]);
+
+    const zoom = d3.zoom()
+        .scaleExtent([1, 5])
+        .translateExtent([[0, 0], [width, height]])
+        .on('zoom',function (event) {
+            svg
+            .selectAll('path') // To prevent stroke width from scaling
+            .attr('transform', event.transform);
+        });
+
+    svg.call(zoom);
+
+    // A path generator
+    const path = d3.geoPath()
+        .projection(projection)
 
     // Load external data and boot
-    d3.json("dep.geojson").then( function(data){
+    Promise.all([d3.json("dep.geojson"),d3.csv("total_migrations.csv")])
+    .then( function(res){
         // Filter data
-        // data.features = data.features.filter(d => {console.log(d.properties.insee_dep); return d.properties.name=="01"})
+        let geom = res[0];
+        let data = res[1];
 
+    
         // Draw the map
         svg.append("g")
             .selectAll("path")
-            .data(data.features)
+            .data(geom.features)
             .join("path")
             .attr("fill", "grey")
-            .attr("d", d3.geoPath()
-                .projection(projection)
-            )
-            .style("stroke", "none")
+            .attr("d", d3.geoPath().projection(projection))
+            .style("stroke", "white")
+            .style("stroke-width", 0.4)
+            .attr("class", function(d){ return "departement" } )
+            .attr("id", function(d){ return "dep"+d.properties.insee_dep } )
+            // .on("mouseover", mouseOver)
+            .on("mouseover", (d,i) => {
+                d3.selectAll(".departement")
+                .transition()
+                .duration(200)
+                .style("opacity", .5)
+                d3.select("#dep"+i.properties.insee_dep)
+                .transition()
+                .duration(200)
+                .style("opacity", 1)
+                // .style("stroke", "red")
+                displayFlow(data,i.properties.insee_dep)
+            })
+            .on("mouseout", (d,i) => {
+                oui = d3.selectAll(".flux")
+                oui.remove();
+                d3.selectAll(".departement")
+                // .transition()
+                // .duration(200)
+                .style("opacity", 1)
+                d3.select("#dep"+i.properties.insee_dep)
+                .transition()
+                .duration(200)
+                .style("stroke", "white")
+            })
+
+        // Reformat the list of link. Note that columns in csv file are called long1, long2, lat1, lat2
+        function displayFlow(data_init,insee_dep) {
+            let link = [];
+            let data = data_init.filter(e => e["DRAN"] == insee_dep)
+            data.forEach(function(row){
+                source = [+row.lng_src, +row.lat_src]
+                target = [+row.lng_dest, +row.lat_dest]
+                topush = {type: "LineString", coordinates: [source, target], nb:row["IPONDI"]}
+                link.push(topush)
+            })
+        
+            // Add the path
+            svg.selectAll("myPath")
+            .data(link)
+            .join("path")
+                .attr("d", function(d){ return path(d)})
+                .attr("class", "flux")
+                .attr("pointer-events", "none") // désactiver le mousover
+                .style("fill", "none")
+                .style("stroke", "yellow")
+                .style("stroke-width", (e) => {
+                    return e.nb/50
+                })
+                .style("opacity",0.5)
+                .transition()
+                .duration(100)
+                .attrTween("stroke-dasharray", function() {
+                    var len = this.getTotalLength();
+                    return function(t) { return (d3.interpolateString("0," + len, len + ",0"))(t) };
+                });
+        }
     })
+
 </script>
 </html>
