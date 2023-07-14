@@ -12,9 +12,9 @@
     <p>Survolez un département pour afficher les flux de personnes ayant déménagé en 2019</p>
     <div id="graphiques">
         <div>
-            <svg id="my_dataviz" width="1000" height="800"></svg>
+            <svg id="my_dataviz" width="700" height="650"></svg>
         </div>
-        <div id="barplot" width="700" height="800"></div>
+        <div id="barplot" width="700" height="650"></div>
     </div>
 </body>
 <script>
@@ -22,7 +22,7 @@
     // set the dimensions and margins of the graph
     const marginP = {top: 20, right: 0, bottom: 40, left: 100},
         widthP = 460 - marginP.left - marginP.right,
-        heightP = 800 - marginP.top - marginP.bottom;
+        heightP = 600 - marginP.top - marginP.bottom;
 
     // append the svg object to the body of the page
     const svgPlot = d3.select("#barplot")
@@ -41,8 +41,8 @@
 
     // Map and projection
     const projection = d3.geoMercator()
-        .center([2, 47])                // GPS of location to zoom on
-        .scale(2880)                       // This is like the zoom
+        .center([2, 46])                // GPS of location to zoom on
+        .scale(2400)                       // This is like the zoom
         .translate([ width/2, height/2 ]);
 
     const zoom = d3.zoom()
@@ -93,7 +93,9 @@
                 .style("opacity", 1)
                 // .style("stroke", "red")
                 
-                displayFlow(data,id)
+                displayFlow(data,id);
+                
+                d3.selectAll("myRect").remove()
                 drawBarPlot(data,id)
             })
             .on("mouseout", (d,i) => {
@@ -145,10 +147,11 @@
 
     function drawBarPlot(data_init,id) {
         let data = data_init.filter(e => e["DRAN"] == id)
-        let max = d3.max(data, e => e["IPONDI"])
         data = data.sort(function(a, b) {
             return d3.descending(+a["IPONDI"], +b["IPONDI"]);
         }).slice(0, 10);
+        let max = d3.max(data, e => e["IPONDI"])
+        console.log(max);
         
         var x = d3.scaleLinear()
             .domain([0, max])
@@ -173,18 +176,18 @@
         svgPlot.selectAll("myRect")
             .data(data)
             .join("rect")
-            .attr("x", x(d["IPONDI"]))
+            .attr("x", x(0))
             .attr("y", function(d) { return y(d["DRACT"]); })
-            .attr("width", widthP)
+            .attr("width", d => x(d["IPONDI"]))
             .attr("height", y.bandwidth() )
             .attr("fill", "yellow")
 
-        svgPlot.selectAll("rect")
-            .transition()
-            .duration(800)
-            .attr("x", d => x(d["IPONDI"]))
-            .attr("width", d => x(d["IPONDI"]))
-            .delay((d,i) => {console.log(i); return i*100})
+        // svgPlot.selectAll("rect")
+        //     .transition()
+        //     .duration(800)
+        //     .attr("x", d => x(d["IPONDI"]))
+        //     .attr("width", d => x(d["IPONDI"]))
+        //     .delay((d,i) => {console.log(i); return i*100})
     }
 
 </script>
