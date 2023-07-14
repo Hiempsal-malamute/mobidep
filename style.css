@@ -3,5 +3,9 @@ html, body {
     width: 100%;
     background: rgb(50, 50, 50);
     position: absolute;
-    color:white
+    color:white;
+}
+
+#graphiques {
+    display: flex;
 }

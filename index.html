@@ -10,13 +10,32 @@
 <body>
     <h1>Migrations résidentielles en France</h1>
     <p>Survolez un département pour afficher les flux de personnes ayant déménagé en 2019</p>
-    <!-- <div id="mapid">i</div> -->
-    <svg id="my_dataviz" width="1000" height="800"></svg>
-    <svg id="barplot" width="700" height="800">aaa</svg>
+    <div id="graphiques">
+        <div>
+            <svg id="my_dataviz" width="1000" height="800"></svg>
+        </div>
+        <div id="barplot" width="700" height="800"></div>
+    </div>
 </body>
 <script>
-    // The svg
-    const svg = d3.select("svg"),
+    // graphique
+    // set the dimensions and margins of the graph
+    const marginP = {top: 20, right: 0, bottom: 40, left: 100},
+        widthP = 460 - marginP.left - marginP.right,
+        heightP = 800 - marginP.top - marginP.bottom;
+
+    // append the svg object to the body of the page
+    const svgPlot = d3.select("#barplot")
+    .append("svg")
+        .attr("width", marginP + marginP.left + marginP.right)
+        .attr("height", heightP + marginP.top + marginP.bottom)
+    .append("g")
+        .attr("transform",
+            "translate(" + marginP.left + "," + marginP.top + ")");
+
+
+    // Carte
+    const svg = d3.select("#my_dataviz"),
         width = +svg.attr("width"),
         height = +svg.attr("height");
 
@@ -62,16 +81,20 @@
             .attr("id", function(d){ return "dep"+d.properties.insee_dep } )
             // .on("mouseover", mouseOver)
             .on("mouseover", (d,i) => {
+                const id = i.properties.insee_dep;
+
                 d3.selectAll(".departement")
                 .transition()
                 .duration(200)
                 .style("opacity", .5)
-                d3.select("#dep"+i.properties.insee_dep)
+                d3.select("#dep"+id)
                 .transition()
                 .duration(200)
                 .style("opacity", 1)
                 // .style("stroke", "red")
-                displayFlow(data,i.properties.insee_dep)
+                
+                displayFlow(data,id)
+                drawBarPlot(data,id)
             })
             .on("mouseout", (d,i) => {
                 oui = d3.selectAll(".flux")
@@ -84,6 +107,7 @@
                 .transition()
                 .duration(200)
                 .style("stroke", "white")
+                d3.selectAll("rect").remove()
             })
 
         // Reformat the list of link. Note that columns in csv file are called long1, long2, lat1, lat2
@@ -118,6 +142,50 @@
                 });
         }
     })
+
+    function drawBarPlot(data_init,id) {
+        let data = data_init.filter(e => e["DRAN"] == id)
+        let max = d3.max(data, e => e["IPONDI"])
+        data = data.sort(function(a, b) {
+            return d3.descending(+a["IPONDI"], +b["IPONDI"]);
+        }).slice(0, 10);
+        
+        var x = d3.scaleLinear()
+            .domain([0, max])
+            .range([ 0, widthP]);
+        svgPlot.append("g")
+            .attr("transform", "translate(0," + heightP + ")")
+            .call(d3.axisBottom(x))
+            .selectAll("text")
+            .attr("transform", "translate(-10,0)rotate(-45)")
+            .style("text-anchor", "end");
+
+        // Y axis
+        var y = d3.scaleBand()
+            .range([ 0, heightP ])
+            .domain(data.map(function(d) { return d["DRACT"]; }))
+            .padding(.1);
+        
+        svgPlot.append("g")
+            .call(d3.axisLeft(y))
+
+        //Bars
+        svgPlot.selectAll("myRect")
+            .data(data)
+            .join("rect")
+            .attr("x", x(d["IPONDI"]))
+            .attr("y", function(d) { return y(d["DRACT"]); })
+            .attr("width", widthP)
+            .attr("height", y.bandwidth() )
+            .attr("fill", "yellow")
+
+        svgPlot.selectAll("rect")
+            .transition()
+            .duration(800)
+            .attr("x", d => x(d["IPONDI"]))
+            .attr("width", d => x(d["IPONDI"]))
+            .delay((d,i) => {console.log(i); return i*100})
+    }
 
 </script>
 </html>
