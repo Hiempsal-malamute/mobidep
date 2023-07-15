@@ -21,7 +21,7 @@
     // graphique
     const barPlotContainer = d3.select("#barplot")
     // set the dimensions and margins of the graph
-    const marginP = {top: 20, right: 0, bottom: 40, left: 100},
+    const marginP = {top: 20, right: 20, bottom: 40, left: 20},
         widthP = 460 - marginP.left - marginP.right,
         heightP = 600 - marginP.top - marginP.bottom;
 
@@ -139,6 +139,8 @@
     }
 
     function drawBarPlot(data_init,id) {
+        const orCol = "DRAN", destCol = "DRACT";
+
         // append the svg object to the body of the page
         const svgPlot = barPlotContainer
         .append("svg")
@@ -149,13 +151,12 @@
             "translate(" + marginP.left + "," + marginP.top + ")");
 
 
-        let data = data_init.filter(e => e["DRAN"] == id).sort(function(a, b) {
+        let data = data_init.filter(e => e[orCol] == id).sort(function(a, b) {
             return d3.descending(+a["IPONDI"], +b["IPONDI"]);
         }).slice(0, 10);
-        let max = d3.max(data, e => e["IPONDI"])
         
         var x = d3.scaleLinear()
-            .domain([0, max])
+            .domain([0, data[0]["IPONDI"]]) // max value
             .range([ 0, widthP]);
 
         svgPlot.append("g")
@@ -168,7 +169,7 @@
         // Y axis
         var y = d3.scaleBand()
             .range([ 0, heightP ])
-            .domain(data.map(function(d) { return d["DRACT"]; }))
+            .domain(data.map(function(d) { return d[destCol]; }))
             .padding(.1);
         
         svgPlot.append("g")
@@ -179,7 +180,7 @@
             .data(data)
             .join("rect")
             .attr("x", x(0))
-            .attr("y", function(d) { return y(d["DRACT"]); })
+            .attr("y", function(d) { return y(d[destCol]); })
             .attr("width", d => x(d["IPONDI"]))
             .attr("height", y.bandwidth() )
             .attr("fill", "yellow")
