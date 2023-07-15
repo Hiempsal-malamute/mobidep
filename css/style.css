@@ -37,3 +37,7 @@ text {
   font-family: "Rubik-Light";
   font-size: 14px;
 }
+
+i {
+  font-size: 30px !important;
+}
