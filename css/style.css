@@ -1,0 +1,27 @@
+@font-face {
+    font-family: 'Rubik-Regular';
+    src: url('./fonts/static/Rubik-Regular.ttf');
+  }
+
+  @font-face {
+    font-family: 'Rubik-Light';
+    src: url('./fonts/static/Rubik-Light.ttf');
+  }
+  
+  @font-face {
+    font-family: 'Rubik-Bold';
+    src: url('./fonts/static/Rubik-Bold.ttf');
+  }
+
+html, body {
+    height: 100%;
+    width: 100%;
+    background: #042227;
+    position: absolute;
+    color:white;
+    font-family: "Rubik-Light";
+}
+
+#graphiques {
+    display: flex;
+}
