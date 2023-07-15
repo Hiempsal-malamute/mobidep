@@ -3,21 +3,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
     <!-- Load d3.js -->
     <script src="https://d3js.org/d3.v6.js"></script>
 </head>
 <body>
     <h1>Migrations résidentielles en France</h1>
     <p>Survolez un département pour afficher les flux de personnes ayant déménagé en 2019</p>
+    <div id="stats" style="display: none;">
+        <p>
+            Département sélectionné : <span id="depSelected"></span>
+        </p>
+        <p>
+            Nombre total d'individus ayant déménagé : <span id="nombre"></span>  
+        </p>
+    </div>
     <div id="graphiques">
         <div>
             <svg id="my_dataviz" width="700" height="650"></svg>
         </div>
+        <h5>Les 10 premiers départements de destination</h5>
         <div id="barplot" width="700" height="650"></div>
     </div>
 </body>
 <script>
+    const depNom = d3.select("#depSelected");
+    const nb = d3.select("#nombre");
+    const statsDiv = document.getElementById("stats");
+
     // graphique
     const barPlotContainer = d3.select("#barplot")
     // set the dimensions and margins of the graph
@@ -68,10 +81,12 @@
             .attr("d", d3.geoPath().projection(projection))
             .style("stroke", "white")
             .style("stroke-width", 0.4)
+            .style("cursor","pointer")
             .attr("class", function(d){ return "departement" } )
             .attr("id", function(d){ return "dep"+d.properties.insee_dep } )
             // .on("mouseover", mouseOver)
             .on("mouseover", (d,i) => {
+                statsDiv.style.display = "block"
                 const id = i.properties.insee_dep;
 
                 d3.selectAll(".departement")
@@ -89,6 +104,7 @@
                 drawBarPlot(data,id);
             })
             .on("mouseout", (d,i) => {
+                statsDiv.style.display = "none"
                 barPlotContainer.select("svg").remove()
 
                 oui = d3.selectAll(".flux")
@@ -124,6 +140,7 @@
             .attr("d", function(d){ return path(d)})
             .attr("class", "flux")
             .attr("pointer-events", "none") // désactiver le mousover
+            .attr("marker-end","url(#arrow)")
             .style("fill", "none")
             .style("stroke", "yellow")
             .style("stroke-width", (e) => {
@@ -131,11 +148,15 @@
             })
             .style("opacity",0.5)
             .transition()
-            .duration(100)
+            .duration(500)
             .attrTween("stroke-dasharray", function() {
                 var len = this.getTotalLength();
                 return function(t) { return (d3.interpolateString("0," + len, len + ",0"))(t) };
             });
+        
+        depNom.html(data[0].DRAN);
+        nb.html(d3.sum(data, e=> e["IPONDI"]));
+
     }
 
     function drawBarPlot(data_init,id) {
