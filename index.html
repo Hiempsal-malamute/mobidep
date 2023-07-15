@@ -14,6 +14,17 @@
         <div>
             <h1>Migrations résidentielles en France</h1>
             <p>Survolez la carte pour afficher connaitre le nombre de personnes ayant changé de département entre 2018 et 2019.</p>
+            <form id="type-mob" action="" style="display: flex;">
+                <div class="switch-field">
+                    <input type="radio" id="sortie" name="drone" value="sortie"
+                            checked>
+                    <label for="sortie">Voir les déménagements</label>
+                </div>
+                <div class="switch-field">
+                    <input type="radio" id="entree" name="drone" value="entree">
+                    <label for="entree">Voir les emménagements</label>
+                </div>
+            </form>
             <div id="stats" style="display: none;">
                 <p>
                     <i class="las la-map-marker-alt"></i>
@@ -36,6 +47,28 @@
     const depNom = d3.select("#depSelected");
     const nb = d3.select("#nombre");
     const statsDiv = document.getElementById("stats");
+    const typeFlux = document.getElementById("type-mob");
+    const switchToggle = document.querySelectorAll(".switch-field")
+
+    let destCol = "DRACT",
+    srcCol = "DRAN",
+    accentColor = "yellow"
+
+
+    // choisir le type de flux (déménagements ou emménagements)
+    typeFlux.addEventListener("change", (e) => {
+        const choix = e.target.value;
+        if(choix == "sortie") {
+            destCol = "DRACT";
+            srcCol = "DRAN";
+            accentColor, switchToggle[0].style.backgroundColor = "yellow"
+        } else if(choix == "entree") {
+            destCol = "DRAN";
+            srcCol = "DRACT";
+            console.log(switchToggle);
+            accentColor, switchToggle[1].style.backgroundColor = "turquoise";
+        }
+    })
 
     // graphique
     const barPlotContainer = d3.select("#barplot")
@@ -151,7 +184,7 @@
     // Reformat the list of link. Note that columns in csv file are called long1, long2, lat1, lat2
     function displayFlow(data_init,insee_dep,feature) {
         let link = [];
-        let data = data_init.filter(e => e["DRAN"] == insee_dep)
+        let data = data_init.filter(e => e[srcCol] == insee_dep)
         data.forEach(function(row){
             source = [+row.lng_src, +row.lat_src]
             target = [+row.lng_dest, +row.lat_dest]
@@ -171,7 +204,7 @@
             .attr("pointer-events", "none") // désactiver le mousover
             .attr("marker-end","url(#arrow)")
             .style("fill", "none")
-            .style("stroke", "yellow")
+            .style("stroke", accentColor)
             .style("stroke-width", (e) => {
                 return e.nb/50
             })
@@ -191,7 +224,7 @@
     }
 
     function drawBarPlot(data_init,id,departements) {
-        const orCol = "DRAN", destCol = "DRACT";
+        // const orCol = "DRAN", destCol = "DRACT";
 
         // append the svg object to the body of the page
         const svgPlot = barPlotContainer
@@ -204,7 +237,7 @@
             "translate(" + marginP.left + "," + marginP.top + ")");
 
 
-        let data = data_init.filter(e => e[orCol] == id).sort(function(a, b) {
+        let data = data_init.filter(e => e[srcCol] == id).sort(function(a, b) {
             return d3.descending(+a["IPONDI"], +b["IPONDI"]);
         }).slice(0, 10);
 
@@ -243,7 +276,7 @@
             .attr("y", d => y(d.lib_dep))
             // .attr("width", d => x(d["IPONDI"]))
             .attr("height", y.bandwidth() )
-            .attr("fill", "yellow")
+            .attr("fill", accentColor)
 
         bars.append("text")
         .attr("class", "label")
