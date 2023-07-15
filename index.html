@@ -5,7 +5,7 @@
     <title>Document</title>
     <link rel="stylesheet" href="css/style.css">
     <!-- Load d3.js -->
-    <script src="https://d3js.org/d3.v6.js"></script>
+    <script src="https://d3js.org/d3.v7.js"></script>
 </head>
 <body>
     <div class="container">
@@ -21,8 +21,8 @@
                 </p>
             </div>
             <div id="graphiques">
-                <div id="barplot" width="400" height="600">
-                    <!-- <h5>Les 10 premiers départements de destination</h5> -->
+                <div id="barplot" width="700" height="550">
+                    <h5>Les 10 premiers départements de destination</h5>
                 </div>
             </div>
     
@@ -125,6 +125,10 @@
                 .style("stroke", "white")
 
             })
+            .on("click", d => {
+                const id = i.properties.insee_dep;
+                displayFlow(data,id);
+            })
 
     })
 
@@ -171,7 +175,7 @@
         // append the svg object to the body of the page
         const svgPlot = barPlotContainer
         .append("svg")
-        .attr("width", marginP + marginP.left + marginP.right)
+        .attr("width", widthP + marginP.left + marginP.right)
         .attr("height", heightP + marginP.top + marginP.bottom)
         .append("g")
         .attr("transform",

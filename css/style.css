@@ -14,13 +14,12 @@
   }
 
 html, body {
-  background: #042227;
   position: absolute;
+  background: #042227;
   color:white;
   font-family: "Rubik-Light";
   height: 100%;
   width: 100%;
-  left: 10px;
 }
 
 #graphiques {
@@ -29,5 +28,10 @@ html, body {
 
 .container {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, 2fr);
+}
+
+text {
+  font-family: "Rubik-Light";
+  font-size: 14px;
 }
