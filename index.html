@@ -19,25 +19,16 @@
 </body>
 <script>
     // graphique
+    const barPlotContainer = d3.select("#barplot")
     // set the dimensions and margins of the graph
     const marginP = {top: 20, right: 0, bottom: 40, left: 100},
         widthP = 460 - marginP.left - marginP.right,
         heightP = 600 - marginP.top - marginP.bottom;
 
-    // append the svg object to the body of the page
-    const svgPlot = d3.select("#barplot")
-    .append("svg")
-        .attr("width", marginP + marginP.left + marginP.right)
-        .attr("height", heightP + marginP.top + marginP.bottom)
-    .append("g")
-        .attr("transform",
-            "translate(" + marginP.left + "," + marginP.top + ")");
-
-
     // Carte
-    const svg = d3.select("#my_dataviz"),
-        width = +svg.attr("width"),
-        height = +svg.attr("height");
+    const svgMap = d3.select("#my_dataviz"),
+        width = +svgMap.attr("width"),
+        height = +svgMap.attr("height");
 
     // Map and projection
     const projection = d3.geoMercator()
@@ -49,12 +40,12 @@
         .scaleExtent([1, 5])
         .translateExtent([[0, 0], [width, height]])
         .on('zoom',function (event) {
-            svg
+            svgMap
             .selectAll('path') // To prevent stroke width from scaling
             .attr('transform', event.transform);
         });
 
-    svg.call(zoom);
+    svgMap.call(zoom);
 
     // A path generator
     const path = d3.geoPath()
@@ -69,11 +60,11 @@
 
     
         // Draw the map
-        svg.append("g")
+        svgMap.append("g")
             .selectAll("path")
             .data(geom.features)
             .join("path")
-            .attr("fill", "grey")
+            .attr("fill", "#02454F")
             .attr("d", d3.geoPath().projection(projection))
             .style("stroke", "white")
             .style("stroke-width", 0.4)
@@ -95,10 +86,11 @@
                 
                 displayFlow(data,id);
                 
-                d3.selectAll("myRect").remove()
-                drawBarPlot(data,id)
+                drawBarPlot(data,id);
             })
             .on("mouseout", (d,i) => {
+                barPlotContainer.select("svg").remove()
+
                 oui = d3.selectAll(".flux")
                 oui.remove();
                 d3.selectAll(".departement")
@@ -109,53 +101,63 @@
                 .transition()
                 .duration(200)
                 .style("stroke", "white")
-                d3.selectAll("rect").remove()
+
             })
 
-        // Reformat the list of link. Note that columns in csv file are called long1, long2, lat1, lat2
-        function displayFlow(data_init,insee_dep) {
-            let link = [];
-            let data = data_init.filter(e => e["DRAN"] == insee_dep)
-            data.forEach(function(row){
-                source = [+row.lng_src, +row.lat_src]
-                target = [+row.lng_dest, +row.lat_dest]
-                topush = {type: "LineString", coordinates: [source, target], nb:row["IPONDI"]}
-                link.push(topush)
-            })
-        
-            // Add the path
-            svg.selectAll("myPath")
-            .data(link)
-            .join("path")
-                .attr("d", function(d){ return path(d)})
-                .attr("class", "flux")
-                .attr("pointer-events", "none") // désactiver le mousover
-                .style("fill", "none")
-                .style("stroke", "yellow")
-                .style("stroke-width", (e) => {
-                    return e.nb/50
-                })
-                .style("opacity",0.5)
-                .transition()
-                .duration(100)
-                .attrTween("stroke-dasharray", function() {
-                    var len = this.getTotalLength();
-                    return function(t) { return (d3.interpolateString("0," + len, len + ",0"))(t) };
-                });
-        }
     })
 
+    // Reformat the list of link. Note that columns in csv file are called long1, long2, lat1, lat2
+    function displayFlow(data_init,insee_dep) {
+        let link = [];
+        let data = data_init.filter(e => e["DRAN"] == insee_dep)
+        data.forEach(function(row){
+            source = [+row.lng_src, +row.lat_src]
+            target = [+row.lng_dest, +row.lat_dest]
+            topush = {type: "LineString", coordinates: [source, target], nb:row["IPONDI"]}
+            link.push(topush)
+        })
+    
+        // Add the path
+        svgMap.selectAll("myPath")
+        .data(link)
+        .join("path")
+            .attr("d", function(d){ return path(d)})
+            .attr("class", "flux")
+            .attr("pointer-events", "none") // désactiver le mousover
+            .style("fill", "none")
+            .style("stroke", "yellow")
+            .style("stroke-width", (e) => {
+                return e.nb/50
+            })
+            .style("opacity",0.5)
+            .transition()
+            .duration(100)
+            .attrTween("stroke-dasharray", function() {
+                var len = this.getTotalLength();
+                return function(t) { return (d3.interpolateString("0," + len, len + ",0"))(t) };
+            });
+    }
+
     function drawBarPlot(data_init,id) {
-        let data = data_init.filter(e => e["DRAN"] == id)
-        data = data.sort(function(a, b) {
+        // append the svg object to the body of the page
+        const svgPlot = barPlotContainer
+        .append("svg")
+        .attr("width", marginP + marginP.left + marginP.right)
+        .attr("height", heightP + marginP.top + marginP.bottom)
+        .append("g")
+        .attr("transform",
+            "translate(" + marginP.left + "," + marginP.top + ")");
+
+
+        let data = data_init.filter(e => e["DRAN"] == id).sort(function(a, b) {
             return d3.descending(+a["IPONDI"], +b["IPONDI"]);
         }).slice(0, 10);
         let max = d3.max(data, e => e["IPONDI"])
-        console.log(max);
         
         var x = d3.scaleLinear()
             .domain([0, max])
             .range([ 0, widthP]);
+
         svgPlot.append("g")
             .attr("transform", "translate(0," + heightP + ")")
             .call(d3.axisBottom(x))
