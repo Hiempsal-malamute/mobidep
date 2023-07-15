@@ -8,22 +8,28 @@
     <script src="https://d3js.org/d3.v6.js"></script>
 </head>
 <body>
-    <h1>Migrations résidentielles en France</h1>
-    <p>Survolez un département pour afficher les flux de personnes ayant déménagé en 2019</p>
-    <div id="stats" style="display: none;">
-        <p>
-            Département sélectionné : <span id="depSelected"></span>
-        </p>
-        <p>
-            Nombre total d'individus ayant déménagé : <span id="nombre"></span>  
-        </p>
-    </div>
-    <div id="graphiques">
+    <div class="container">
         <div>
-            <svg id="my_dataviz" width="700" height="650"></svg>
+            <h1>Migrations résidentielles en France</h1>
+            <p>Survolez un département pour afficher les flux de personnes ayant déménagé en 2019</p>
+            <div id="stats" style="display: none;">
+                <p>
+                    Département sélectionné : <span id="depSelected"></span>
+                </p>
+                <p>
+                    Nombre total d'individus ayant déménagé : <span id="nombre"></span>  
+                </p>
+            </div>
+            <div id="graphiques">
+                <div id="barplot" width="400" height="600">
+                    <!-- <h5>Les 10 premiers départements de destination</h5> -->
+                </div>
+            </div>
+    
         </div>
-        <h5>Les 10 premiers départements de destination</h5>
-        <div id="barplot" width="700" height="650"></div>
+        <div id="map">
+            <svg id="my_dataviz" width="900" height="850"></svg>
+        </div>
     </div>
 </body>
 <script>
@@ -34,9 +40,9 @@
     // graphique
     const barPlotContainer = d3.select("#barplot")
     // set the dimensions and margins of the graph
-    const marginP = {top: 20, right: 20, bottom: 40, left: 20},
-        widthP = 460 - marginP.left - marginP.right,
-        heightP = 600 - marginP.top - marginP.bottom;
+    const marginP = {top: 20, right: 50, bottom: 50, left: 20},
+        widthP = +barPlotContainer.attr("width") - marginP.left - marginP.right,
+        heightP = +barPlotContainer.attr("height") - marginP.top - marginP.bottom;
 
     // Carte
     const svgMap = d3.select("#my_dataviz"),
@@ -45,8 +51,8 @@
 
     // Map and projection
     const projection = d3.geoMercator()
-        .center([2, 46])                // GPS of location to zoom on
-        .scale(2400)                       // This is like the zoom
+        .center([2.5, 46.5]) // GPS of location to zoom on
+        .scale(3400) // This is like the zoom
         .translate([ width/2, height/2 ]);
 
     const zoom = d3.zoom()
@@ -197,7 +203,7 @@
             .call(d3.axisLeft(y))
 
         //Bars
-        svgPlot.selectAll("myRect")
+        const bars = svgPlot.selectAll("myRect")
             .data(data)
             .join("rect")
             .attr("x", x(0))
@@ -205,6 +211,20 @@
             .attr("width", d => x(d["IPONDI"]))
             .attr("height", y.bandwidth() )
             .attr("fill", "yellow")
+
+        // bars.append("text")
+        // .attr("class", "label")
+        // //y position of the label is halfway down the bar
+        // .attr("y", function (d) {
+        //     return y(d.desCol) + y.bandwidth() / 2 + 4;
+        // })
+        // //x position is 3 pixels to the right of the bar
+        // .attr("x", function (d) {
+        //     return x(d.IPONDI) + 3;
+        // })
+        // .text(function (d) {
+        //     return d["IPONDI"];
+        // });
 
         // svgPlot.selectAll("rect")
         //     .transition()

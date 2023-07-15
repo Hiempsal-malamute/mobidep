@@ -14,14 +14,20 @@
   }
 
 html, body {
-    height: 100%;
-    width: 100%;
-    background: #042227;
-    position: absolute;
-    color:white;
-    font-family: "Rubik-Light";
+  background: #042227;
+  position: absolute;
+  color:white;
+  font-family: "Rubik-Light";
+  height: 100%;
+  width: 100%;
+  left: 10px;
 }
 
 #graphiques {
     display: flex;
+}
+
+.container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
 }
