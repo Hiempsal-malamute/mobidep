@@ -14,21 +14,23 @@
   }
 
 html, body {
+  display: block;
   position: absolute;
   background: #042227;
   color:white;
   font-family: "Rubik-Light";
-  height: 100%;
-  width: 100%;
+  width: calc(100% - 20px);
+  left: 10px;
+  /* height: 100%; */
 }
 
 #graphiques {
-    display: flex;
+    /* display: flex; */
 }
 
 .container {
   display: grid;
-  grid-template-columns: repeat(2, 2fr);
+  grid-template-columns: repeat(2, 1fr);
 }
 
 text {
