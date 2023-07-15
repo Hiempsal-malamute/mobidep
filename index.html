@@ -32,7 +32,7 @@
     
         </div>
         <div id="map">
-            <svg id="my_dataviz" width="900" height="850"></svg>
+            <svg id="my_dataviz" width="900"></svg>
         </div>
     </div>
 </body>
@@ -49,7 +49,7 @@
         heightP = +barPlotContainer.attr("height") - marginP.top - marginP.bottom;
 
     // Carte
-    const svgMap = d3.select("#my_dataviz"),
+    const svgMap = d3.select("#my_dataviz").attr("height",window.innerHeight),
         width = +svgMap.attr("width"),
         height = +svgMap.attr("height");
 
@@ -83,7 +83,9 @@
 
     
         // Draw the map
-        svgMap.append("g")
+        svgMap
+        .call(responsivefy)
+            .append("g")
             .selectAll("path")
             .data(geom.features)
             .join("path")
@@ -179,6 +181,7 @@
         // append the svg object to the body of the page
         const svgPlot = barPlotContainer
         .append("svg")
+        // .call(responsivefy)
         .attr("width", widthP + marginP.left + marginP.right)
         .attr("height", heightP + marginP.top + marginP.bottom)
         .append("g")
@@ -215,8 +218,9 @@
             .data(data)
             .join("rect")
             .attr("x", x(0))
-            .attr("y", function(d) { return y(d[destCol]); })
-            .attr("width", d => x(d["IPONDI"]))
+            .attr("width", 0)
+            .attr("y", d => y(d[destCol]))
+            // .attr("width", d => x(d["IPONDI"]))
             .attr("height", y.bandwidth() )
             .attr("fill", "yellow")
 
@@ -234,12 +238,34 @@
         //     return d["IPONDI"];
         // });
 
-        // svgPlot.selectAll("rect")
-        //     .transition()
-        //     .duration(800)
-        //     .attr("x", d => x(d["IPONDI"]))
-        //     .attr("width", d => x(d["IPONDI"]))
-        //     .delay((d,i) => {console.log(i); return i*100})
+        svgPlot.selectAll("rect")
+            .transition()
+            .duration(500)
+            .ease(d3.easeCubic)
+            .attr("width", d => x(d["IPONDI"]))
+            .delay((d,i) => { return i*100})
+    }
+
+    // pour rendre les graphiques responsifs au chargement de la page (ne fonctionne pas avec DC js)
+    function responsivefy(svg) {
+        // http://bl.ocks.org/d3noob/6a3b59149cf3ebdb3fc4
+        let container = d3.select(svg.node().parentNode),
+            width = parseInt(svg.style('width')),
+            height = parseInt(svg.style('height')),
+            aspect = width / height;
+        
+        svg.attr('viewBox', '0 0 ' + width + " " + height )
+            .attr('preserveAspectRatio', 'xMinYMid')
+            .call(resize);
+        
+        d3.select(window).on('resize.' + container.attr('id'), resize);
+        d3.select(window).on('load.' + container.attr('id'), resize);
+        
+        function resize() {
+            const w = parseInt(container.style('width'));
+            svg.attr('width', w);
+            svg.attr('height', Math.round(w / aspect));
+        }
     }
 
 </script>
