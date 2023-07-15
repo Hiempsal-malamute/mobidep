@@ -17,11 +17,7 @@
             <div id="stats" style="display: none;">
                 <p>
                     <i class="las la-map-marker-alt"></i>
-                    Département sélectionné : <span id="depSelected"></span>
-                </p>
-                <p>
-                    <i class="las la-user-friends"></i>
-                    Nombre total d'individus ayant déménagé : <span id="nombre"></span>  
+                    <span id="depSelected"></span>
                 </p>
             </div>
             <div id="graphiques">
@@ -44,7 +40,7 @@
     // graphique
     const barPlotContainer = d3.select("#barplot")
     // set the dimensions and margins of the graph
-    const marginP = {top: 20, right: 50, bottom: 50, left: 20},
+    const marginP = {top: 20, right: 50, bottom: 50, left: 200},
         widthP = +barPlotContainer.attr("width") - marginP.left - marginP.right,
         heightP = +barPlotContainer.attr("height") - marginP.top - marginP.bottom;
 
@@ -74,13 +70,26 @@
     const path = d3.geoPath()
         .projection(projection)
 
+    const dataPaths = [d3.json("dep.geojson"),
+                d3.csv("total_migrations.csv"),
+                d3.csv("departement_2022.csv"),
+            ]
+
     // Load external data and boot
-    Promise.all([d3.json("dep.geojson"),d3.csv("total_migrations.csv")])
+    Promise.all(dataPaths)
     .then( function(res){
         // Filter data
         let geom = res[0];
         let data = res[1];
+        data = data.filter(e => e["DRAN"] != "99" && e["DRACT"] != "97");
+        const departements = res[2];
 
+        // retrouver noms et articles
+        geom.features.forEach(e => {
+            const inseeProp = departements.find(d => d["DEP"] == e.properties.insee_dep);
+            e.properties.lib_dep = inseeProp["NCCENR"];
+            e.properties.article = getArticle(inseeProp["TNCC"]);
+        })
     
         // Draw the map
         svgMap
@@ -111,9 +120,9 @@
                 .style("opacity", 1)
                 // .style("stroke", "red")
                 
-                displayFlow(data,id);
+                displayFlow(data,id,i);
                 
-                drawBarPlot(data,id);
+                drawBarPlot(data,id,departements);
             })
             .on("mouseout", (d,i) => {
                 statsDiv.style.display = "none"
@@ -129,6 +138,7 @@
                 .transition()
                 .duration(200)
                 .style("stroke", "white")
+                .style("opacity",1)
 
             })
             .on("click", d => {
@@ -139,7 +149,7 @@
     })
 
     // Reformat the list of link. Note that columns in csv file are called long1, long2, lat1, lat2
-    function displayFlow(data_init,insee_dep) {
+    function displayFlow(data_init,insee_dep,feature) {
         let link = [];
         let data = data_init.filter(e => e["DRAN"] == insee_dep)
         data.forEach(function(row){
@@ -148,6 +158,9 @@
             topush = {type: "LineString", coordinates: [source, target], nb:row["IPONDI"]}
             link.push(topush)
         })
+        link.sort(function(a, b) {
+            return d3.descending(+a.nb, +b.nb);
+        });
     
         // Add the path
         svgMap.selectAll("myPath")
@@ -164,18 +177,20 @@
             })
             .style("opacity",0.5)
             .transition()
-            .duration(500)
+            .duration(1000)
+            // .delay((d,i) => { return i*100})
             .attrTween("stroke-dasharray", function() {
                 var len = this.getTotalLength();
                 return function(t) { return (d3.interpolateString("0," + len, len + ",0"))(t) };
             });
         
-        depNom.html(data[0].DRAN);
-        nb.html(d3.sum(data, e=> e["IPONDI"]));
+        const total = d3.sum(data, e=> e["IPONDI"])
+        depNom.html(`Dans le département ${feature.properties.article}<b>${feature.properties.lib_dep} (${feature.properties.insee_dep})</b>
+                    , <b>${total}</b> individus ont déménagé.`);
 
     }
 
-    function drawBarPlot(data_init,id) {
+    function drawBarPlot(data_init,id,departements) {
         const orCol = "DRAN", destCol = "DRACT";
 
         // append the svg object to the body of the page
@@ -192,6 +207,12 @@
         let data = data_init.filter(e => e[orCol] == id).sort(function(a, b) {
             return d3.descending(+a["IPONDI"], +b["IPONDI"]);
         }).slice(0, 10);
+
+        // ajout noms départements
+        data.forEach(e => {
+            const inseeProp = departements.find(d => d["DEP"] == e[destCol])
+            e.lib_dep = `${inseeProp["NCCENR"]} (${e[destCol]})` 
+        })
         
         var x = d3.scaleLinear()
             .domain([0, data[0]["IPONDI"]]) // max value
@@ -207,7 +228,7 @@
         // Y axis
         var y = d3.scaleBand()
             .range([ 0, heightP ])
-            .domain(data.map(function(d) { return d[destCol]; }))
+            .domain(data.map(function(d) { return d.lib_dep; }))
             .padding(.1);
         
         svgPlot.append("g")
@@ -219,24 +240,25 @@
             .join("rect")
             .attr("x", x(0))
             .attr("width", 0)
-            .attr("y", d => y(d[destCol]))
+            .attr("y", d => y(d.lib_dep))
             // .attr("width", d => x(d["IPONDI"]))
             .attr("height", y.bandwidth() )
             .attr("fill", "yellow")
 
-        // bars.append("text")
-        // .attr("class", "label")
-        // //y position of the label is halfway down the bar
-        // .attr("y", function (d) {
-        //     return y(d.desCol) + y.bandwidth() / 2 + 4;
-        // })
-        // //x position is 3 pixels to the right of the bar
-        // .attr("x", function (d) {
-        //     return x(d.IPONDI) + 3;
-        // })
-        // .text(function (d) {
-        //     return d["IPONDI"];
-        // });
+        bars.append("text")
+        .attr("class", "label")
+        //y position of the label is halfway down the bar
+        .attr("y", function (d) {
+            // return y(d[destCol]) + y.bandwidth() / 2 + 4;
+            return y(d[destCol])
+        })
+        //x position is 3 pixels to the right of the bar
+        .attr("x", function (d) {
+            return x(d["IPONDI"]) + 3;
+        })
+        .text(function (d) {
+            return d["IPONDI"];
+        });
 
         svgPlot.selectAll("rect")
             .transition()
@@ -265,6 +287,30 @@
             const w = parseInt(container.style('width'));
             svg.attr('width', w);
             svg.attr('height', Math.round(w / aspect));
+        }
+    }
+
+    // renvoie le bon article de département
+    function getArticle(col) {
+        switch (col) {
+            case "0":
+                return "de "
+            case "1":
+                return "d'"
+            case "2":
+                return "du "
+            case "3":
+                return "de la "
+            case "4":
+                return "des "
+            case "5":
+                return "de l'"
+            case "5":
+                return "des "
+            case "7":
+                return "de las " 
+            case "8": 
+                return "de los "
         }
     }
 
