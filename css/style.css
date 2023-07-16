@@ -29,9 +29,15 @@ html, body {
   /* height: 100%; */
 }
 
-#graphiques {
-    /* display: flex; */
+#header {
+  display: flex;
+  vertical-align: middle;
 }
+
+#header > h1 {
+  margin-left: 20px;
+}
+
 
 .container {
   display: grid;

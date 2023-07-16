@@ -12,17 +12,22 @@
 <body>
     <div class="container">
         <div>
-            <h1>Migrations résidentielles en France</h1>
-            <p>Survolez la carte pour afficher connaitre le nombre de personnes ayant changé de département entre 2018 et 2019.</p>
+            <div id="header">
+                <img src="noun-movers-858448.svg" alt="" width="160" height="90" srcset="">
+                <h1>
+                    Migrations résidentielles en France
+                </h1>
+            </div>
+            <p>Survolez un département sur la carte pour connaitre les flux résidentiels entrants ou sortants entre 2018 et 2019.</p>
             <form id="type-mob" action="" style="display: flex;">
                 <div class="switch-field">
                     <input type="radio" id="sortie" name="drone" value="sortie"
                             checked>
-                    <label for="sortie">Voir les déménagements</label>
+                    <label for="sortie">Voir les flux sortants (déménagements)</label>
                 </div>
                 <div class="switch-field">
                     <input type="radio" id="entree" name="drone" value="entree">
-                    <label for="entree">Voir les emménagements</label>
+                    <label for="entree">Voir les flux entrants (emménagements)</label>
                 </div>
             </form>
             <div id="stats" style="display: none;">
@@ -32,8 +37,8 @@
                 </p>
             </div>
             <div id="graphiques">
-                <div id="barplot" width="700" height="550">
-                    <h5>Les 10 premiers départements de destination</h5>
+                <div id="barplot" width="700" height="520">
+                    <h5 id = "top10-title" style="display: none;">Top 10 des départements <span id="situation"></span></h5>
                 </div>
             </div>
     
@@ -46,15 +51,20 @@
 <script>
     const depNom = d3.select("#depSelected");
     const nb = d3.select("#nombre");
-    const statsDiv = document.getElementById("stats");
     const typeFlux = document.getElementById("type-mob");
     const switchToggle = document.querySelectorAll(".switch-field")
+    const statsDiv = document.getElementById("stats");
+    const barplotTitle = document.getElementById("top10-title")
+    let situationTop10 = document.getElementById("situation");
 
     let destCol = "DRACT",
     srcCol = "DRAN",
-    accentColor = "yellow"
+    accentColor = "yellow",
+    phrasePourTexte = "ont déménagé du département";
 
-
+    situationTop10.innerHTML = "d'arrivée"
+    
+    
     // choisir le type de flux (déménagements ou emménagements)
     typeFlux.addEventListener("change", (e) => {
         const choix = e.target.value;
@@ -62,17 +72,21 @@
             destCol = "DRACT";
             srcCol = "DRAN";
             accentColor = "yellow"
+            phrasePourTexte = "ont déménagé du département"
+            situationTop10.innerHTML = "d'arrivée"
         } else if(choix == "entree") {
             destCol = "DRAN";
             srcCol = "DRACT";
             accentColor = "turquoise";
+            phrasePourTexte = "ont emménagé dans le département"
+            situationTop10.innerHTML = "de départ"
         }
     })
 
     // graphique
     const barPlotContainer = d3.select("#barplot")
     // set the dimensions and margins of the graph
-    const marginP = {top: 20, right: 50, bottom: 50, left: 200},
+    const marginP = {top: 0, right: 50, bottom: 50, left: 200},
         widthP = +barPlotContainer.attr("width") - marginP.left - marginP.right,
         heightP = +barPlotContainer.attr("height") - marginP.top - marginP.bottom;
 
@@ -140,38 +154,37 @@
             // .on("mouseover", mouseOver)
             .on("mouseover", (d,i) => {
                 statsDiv.style.display = "block"
+                barplotTitle.style.display = "block"
                 const id = i.properties.insee_dep;
 
                 d3.selectAll(".departement")
                 .transition()
                 .duration(200)
-                .style("opacity", .3)
+                .style("opacity", .25)
                 d3.select("#dep"+id)
                 .transition()
                 .duration(200)
                 .style("opacity", 1)
-                // .style("stroke", "red")
+                .style("stroke", "red")
+                .style("stroke-width", 1)
                 
                 displayFlow(data,id,i);
                 
                 drawBarPlot(data,id,departements);
             })
             .on("mouseout", (d,i) => {
-                statsDiv.style.display = "none"
-                barPlotContainer.select("svg").remove()
+                statsDiv.style.display = "none";
+                barplotTitle.style.display = "none";
+                barPlotContainer.select("svg").remove();
 
                 oui = d3.selectAll(".flux")
                 oui.remove();
                 d3.selectAll(".departement")
-                // .transition()
-                // .duration(200)
+                .style("stroke", "white")
+                .style("stroke-width", 0.4)
                 .style("opacity", 1)
-                d3.select("#dep"+i.properties.insee_dep)
                 .transition()
                 .duration(200)
-                .style("stroke", "white")
-                .style("opacity",1)
-
             })
             .on("click", d => {
                 const id = i.properties.insee_dep;
@@ -217,8 +230,9 @@
             });
         
         const total = d3.sum(data, e=> e["IPONDI"])
-        depNom.html(`Dans le département ${feature.properties.article}<b>${feature.properties.lib_dep} (${feature.properties.insee_dep})</b>
-                    , <b>${total}</b> individus ont déménagé.`);
+        depNom.html(`<b>${total}</b> individus ${phrasePourTexte}
+                     ${feature.properties.article}<b>${feature.properties.lib_dep} (${feature.properties.insee_dep})</b>
+                    .`);
 
     }
 
