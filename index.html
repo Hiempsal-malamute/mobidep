@@ -204,7 +204,7 @@
             link.push(topush)
         })
         link.sort(function(a, b) {
-            return d3.descending(+a.nb, +b.nb);
+            return d3.ascending(+a.nb, +b.nb);
         });
     
         // Add the path
@@ -218,7 +218,7 @@
             .style("fill", "none")
             .style("stroke", accentColor)
             .style("stroke-width", (e) => {
-                return e.nb/50
+                return e.nb* 0.05
             })
             .style("opacity",0.5)
             .transition()
