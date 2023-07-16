@@ -13,7 +13,7 @@
     <div class="container">
         <div>
             <div id="header">
-                <img src="noun-movers-858448.svg" alt="" width="160" height="90" srcset="">
+                <img src="img/noun-movers-858448.svg" alt="" width="160" height="90" srcset="">
                 <h1>
                     Migrations résidentielles en France
                 </h1>
@@ -116,9 +116,9 @@
     const path = d3.geoPath()
         .projection(projection)
 
-    const dataPaths = [d3.json("dep.geojson"),
-                d3.csv("total_migrations.csv"),
-                d3.csv("departement_2022.csv"),
+    const dataPaths = [d3.json("data/dep.geojson"),
+                d3.csv("data/mig-res-2019.csv"),
+                d3.csv("data/departement_2022.csv"),
             ]
 
     // Load external data and boot
