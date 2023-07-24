@@ -110,14 +110,17 @@
             .attr('transform', event.transform);
         });
 
-    svgMap.call(zoom);
+    // svgMap.call(zoom); // disable / enable zoom
 
     // A path generator
     const path = d3.geoPath()
         .projection(projection)
 
     const dataPaths = [d3.json("data/dep.geojson"),
-                d3.csv("data/mig-res-2019.csv"),
+                d3.csv("data/mig-res-2019.csv", (d) => {
+                    d["IPONDI"] = parseFloat(d["IPONDI"]);
+                    return d
+                }),
                 d3.csv("data/departement_2022.csv"),
             ]
 
@@ -206,20 +209,27 @@
         link.sort(function(a, b) {
             return d3.ascending(+a.nb, +b.nb);
         });
+
+        const max = d3.max(data_init, e => {
+            return (e["IPONDI"]);
+        })
+
+        // Add a scale for bubble size
+        const size = d3.scaleLinear()
+        .domain([1, max])  // What's in the data
+        .range([ 1, 150])  // Size in pixel
     
         // Add the path
         svgMap.selectAll("myPath")
         .data(link)
         .join("path")
-            .attr("d", function(d){ return path(d)})
+            .attr("d", (d) => path(d) )
             .attr("class", "flux")
             .attr("pointer-events", "none") // désactiver le mousover
             .attr("marker-end","url(#arrow)")
+            .attr("stroke-width", (e) => size(e.nb) )
             .style("fill", "none")
             .style("stroke", accentColor)
-            .style("stroke-width", (e) => {
-                return e.nb* 0.05
-            })
             .style("opacity",0.5)
             .transition()
             .duration(1000)
@@ -297,7 +307,7 @@
             .duration(500)
             .ease(d3.easeCubic)
             .attr("width", d => x(d["IPONDI"]))
-            .delay((d,i) => { return i*100})
+            .delay((d,i) => { return i*50})
 
         // ajout labels
         setTimeout(() => {
