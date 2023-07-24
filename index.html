@@ -168,7 +168,7 @@
                 .style("stroke", "red")
                 .style("stroke-width", 1)
                 
-                displayFlow(data,id,i);
+                drawFlow(data,id,i);
                 
                 drawBarPlot(data,id,departements);
             })
@@ -188,13 +188,13 @@
             })
             .on("click", d => {
                 const id = i.properties.insee_dep;
-                displayFlow(data,id);
+                drawFlow(data,id);
             })
 
     })
 
     // Reformat the list of link. Note that columns in csv file are called long1, long2, lat1, lat2
-    function displayFlow(data_init,insee_dep,feature) {
+    function drawFlow(data_init,insee_dep,feature) {
         let link = [];
         let data = data_init.filter(e => e[srcCol] == insee_dep)
         data.forEach(function(row){
