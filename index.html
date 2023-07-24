@@ -125,7 +125,7 @@
         .projection(projection)
 
     const dataPaths = [d3.json("data/dep.geojson"),
-                d3.csv("data/mig-res-2019.csv", (d) => {
+                d3.csv("data/mig-res-2020.csv", (d) => {
                     d["IPONDI"] = parseFloat(d["IPONDI"]);
                     return d
                 }),
