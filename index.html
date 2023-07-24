@@ -230,7 +230,7 @@
             });
         
         const total = d3.sum(data, e=> e["IPONDI"])
-        depNom.html(`<b>${total}</b> individus ${phrasePourTexte}
+        depNom.html(`<b>${ Math.round(total).toLocaleString("fr-FR") }</b> individus ${phrasePourTexte}
                      ${feature.properties.article}<b>${feature.properties.lib_dep} (${feature.properties.insee_dep})</b>
                     .`);
 
@@ -291,27 +291,29 @@
             .attr("height", y.bandwidth() )
             .attr("fill", accentColor)
 
-        bars.append("text")
-        .attr("class", "label")
-        //y position of the label is halfway down the bar
-        .attr("y", function (d) {
-            // return y(d[destCol]) + y.bandwidth() / 2 + 4;
-            return y(d[destCol])
-        })
-        //x position is 3 pixels to the right of the bar
-        .attr("x", function (d) {
-            return x(d["IPONDI"]) + 3;
-        })
-        .text(function (d) {
-            return d["IPONDI"];
-        });
-
+        // animation
         svgPlot.selectAll("rect")
             .transition()
             .duration(500)
             .ease(d3.easeCubic)
             .attr("width", d => x(d["IPONDI"]))
             .delay((d,i) => { return i*100})
+
+        // ajout labels
+        setTimeout(() => {
+            svgPlot.selectAll("label")
+                .data(data)
+                .join("text")
+                .attr("class", "label")
+                //y position of the label is halfway down the bar
+                .attr("y", d => y(d.lib_dep) + y.bandwidth() / 2 + 4 )
+                //x position is 3 pixels to the right of the bar
+                .attr("x", d => x(d["IPONDI"]) + 7)
+                .text(d => Math.round(d["IPONDI"]) )
+                .style("fill","white")
+                .style("font-size","15px");            
+        }, 500);
+
     }
 
     // pour rendre les graphiques responsifs au chargement de la page (ne fonctionne pas avec DC js)
